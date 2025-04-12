@@ -123,10 +123,11 @@ jobs:
       - name: Build C# (dotnet)
         if: matrix.lang == 'csharp'
         run: |
-          mkdir -p output/${{ matrix.name }}-cs
-          cp ${{ matrix.src }} output/${{ matrix.name }}-cs/Program.cs
-          dotnet new console -o output/${{ matrix.name }}-cs --force
-          dotnet publish -c Release -o output/${{ matrix.name }}-cs
+            mkdir -p output/${{ matrix.name }}-cs
+            dotnet new console -o output/${{ matrix.name }}-cs --force
+            cp ${{ matrix.src }} output/${{ matrix.name }}-cs/Program.cs
+            cd output/${{ matrix.name }}-cs
+            dotnet publish -c Release -o .
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
