@@ -155,6 +155,7 @@ jobs:
       - name: Create GitHub Release Tag
         id: create_release
         run: |
+          cd $GITHUB_WORKSPACE
           # Create a tag for the release (use the current date or a version)
           git tag -a v1.0.${{ github.run_id }} -m "Release version v1.0.${{ github.run_id }}"
           git push origin v1.0.${{ github.run_id }}
