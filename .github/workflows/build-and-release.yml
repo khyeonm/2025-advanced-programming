@@ -1,0 +1,159 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        include:
+          # C++ files
+          - lang: cpp
+            name: adapter
+            src: adapter-pattern/adapter.cpp
+            build_cmd: g++ -O3 adapter-pattern/adapter.cpp -o output/adapter-cpp
+            artifact: output/adapter-cpp
+
+          - lang: cpp
+            name: decorator
+            src: decorator-pattern/decorator.cpp
+            build_cmd: g++ -O3 decorator-pattern/decorator.cpp -o output/decorator-cpp
+            artifact: output/decorator-cpp
+
+          - lang: cpp
+            name: facade
+            src: facade-pattern/facade.cpp
+            build_cmd: g++ -O3 facade-pattern/facade.cpp -o output/facade-cpp
+            artifact: output/facade-cpp
+
+          - lang: cpp
+            name: factory
+            src: factory-method/factory.cpp
+            build_cmd: g++ -O3 factory-method/factory.cpp -o output/factory-cpp
+            artifact: output/factory-cpp
+
+          - lang: cpp
+            name: method
+            src: method-chain/method.cpp
+            build_cmd: g++ -O3 method-chain/method.cpp -o output/method-cpp
+            artifact: output/method-cpp
+
+          # C# files
+          - lang: csharp
+            name: adapter
+            src: adapter-pattern/adapter.cs
+
+          - lang: csharp
+            name: decorator
+            src: decorator-pattern/decorator.cs
+
+          - lang: csharp
+            name: facade
+            src: facade-pattern/facade.cs
+
+          - lang: csharp
+            name: factory
+            src: factory-method/factory.cs
+
+          - lang: csharp
+            name: method
+            src: method-chain/method.cs
+
+          # Kotlin files
+          - lang: kotlin
+            name: adapter
+            src: adapter-pattern/adapter.kt
+            build_cmd: kotlinc adapter-pattern/adapter.kt -include-runtime -d output/adapter-kt.jar
+            artifact: output/adapter-kt.jar
+
+          - lang: kotlin
+            name: decorator
+            src: decorator-pattern/decorator.kt
+            build_cmd: kotlinc decorator-pattern/decorator.kt -include-runtime -d output/decorator-kt.jar
+            artifact: output/decorator-kt.jar
+
+          - lang: kotlin
+            name: facade
+            src: facade-pattern/facade.kt
+            build_cmd: kotlinc facade-pattern/facade.kt -include-runtime -d output/facade-kt.jar
+            artifact: output/facade-kt.jar
+
+          - lang: kotlin
+            name: factory
+            src: factory-method/factory.kt
+            build_cmd: kotlinc factory-method/factory.kt -include-runtime -d output/factory-kt.jar
+            artifact: output/factory-kt.jar
+
+          - lang: kotlin
+            name: method
+            src: method-chain/method.kt
+            build_cmd: kotlinc method-chain/method.kt -include-runtime -d output/method-kt.jar
+            artifact: output/method-kt.jar
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up .NET for C#
+        if: matrix.lang == 'csharp'
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '7.0.x'
+
+      - name: Set up Kotlin for Kotlin
+        if: matrix.lang == 'kotlin'
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Create output directory
+        run: mkdir -p output
+
+      - name: Build C++ and Kotlin
+        if: matrix.lang != 'csharp'
+        run: ${{ matrix.build_cmd }}
+
+      - name: Build C# (dotnet)
+        if: matrix.lang == 'csharp'
+        run: |
+          mkdir -p output/${{ matrix.name }}-cs
+          cp ${{ matrix.src }} output/${{ matrix.name }}-cs/Program.cs
+          dotnet new console -o output/${{ matrix.name }}-cs --force
+          dotnet publish -c Release -o output/${{ matrix.name }}-cs
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.lang }}-${{ matrix.name }}
+          path: |
+            output/${{ matrix.name }}-cs
+            ${{ matrix.artifact }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: output
+
+      - name: Zip all build outputs
+        run: |
+          cd output
+          zip -r release-artifacts.zip .
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: output/release-artifacts.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
