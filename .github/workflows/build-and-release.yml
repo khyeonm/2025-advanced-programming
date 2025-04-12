@@ -137,10 +137,10 @@ jobs:
             output/${{ matrix.name }}-cs
             ${{ matrix.artifact }}
 
+
   release:
     needs: build
     runs-on: ubuntu-latest
-
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -151,6 +151,13 @@ jobs:
         run: |
           cd output
           zip -r release-artifacts.zip .
+
+      - name: Create GitHub Release Tag
+        id: create_release
+        run: |
+          # Create a tag for the release (use the current date or a version)
+          git tag -a v1.0.${{ github.run_id }} -m "Release version v1.0.${{ github.run_id }}"
+          git push origin v1.0.${{ github.run_id }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
