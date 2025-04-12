@@ -159,6 +159,8 @@ jobs:
         id: create_release
         run: |
           cd $GITHUB_WORKSPACE
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
           # Create a tag for the release (use the current date or a version)
           git tag -a v1.0.${{ github.run_id }} -m "Release version v1.0.${{ github.run_id }}"
           git push origin v1.0.${{ github.run_id }}
